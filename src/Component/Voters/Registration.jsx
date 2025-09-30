@@ -238,7 +238,7 @@ const Registration = () => {
         try {
             const studentData = {
                 studentID: formData.studentID,
-                studentName: formData.studentName,
+                studentName: formData.studentName.toLowerCase().trim(),
                 dob: formData.dob,
                 age: formData.age,
                 gender: formData.gender,
@@ -384,7 +384,7 @@ const Registration = () => {
                             value={formData.dob}
                             onChange={handleInputChange}
                             className="w-full p-2 mb-4 border rounded-lg"
-                            required
+                            
                         />
                     </div>
                     <div className="w-1/3">
@@ -485,10 +485,7 @@ const Registration = () => {
                         <label className="block mb-2 font-medium text-sm">Academic Year</label>
                         <select name="academicYear" value={formData.academicYear} onChange={handleInputChange} className="w-full p-2 border rounded-lg" required >
                             <option value="">Select Year</option>
-                            <option value="2024/2025">2024/2025</option>
                             <option value="2025/2026">2025/2026</option>
-                            <option value="2026/2027">2026/2027</option>
-                            <option value="2027/2028">2027/2028</option>
                         </select>
                         {/* Display Previous Year */}
                         {formData.id && originalAcademicInfo && (
