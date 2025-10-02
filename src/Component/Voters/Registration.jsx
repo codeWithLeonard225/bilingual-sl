@@ -330,7 +330,7 @@ const Registration = () => {
         if (password === ADMIN_PASSWORD) {
             if (window.confirm(`Are you sure you want to delete student: ${studentName}?`)) {
                 try {
-                    await deleteDoc(doc(db, "Voters", id));
+                    await deleteDoc(doc(db, "PupilsReg", id));
                     toast.success("Student deleted successfully!");
                 } catch (err) {
                     console.error("Failed to delete user:", err);
