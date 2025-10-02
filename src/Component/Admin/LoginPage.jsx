@@ -2,130 +2,143 @@ import React, { useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Security/AuthContext";
 
 const LoginPage = () => {
-  const [userID, setUserID] = useState("");
-  const [userName, setUserName] = useState("");
-  const [error, setError] = useState("");
+    const [userID, setUserID] = useState("");
+    const [userName, setUserName] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false); // <-- new loading state
 
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const { setUser } = useAuth(); // get setUser
 
-  // Fetch fee records for pupil
-  const fetchFeeData = async (studentId) => {
-    try {
-      const q = query(
-        collection(db, "Receipts"),
-        where("studentID", "==", studentId)
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    } catch (err) {
-      console.error("Error fetching fee data:", err);
-      return [];
-    }
-  };
+    // Fetch fee records for pupil
+    const fetchFeeData = async (studentId) => {
+        try {
+            const q = query(
+                collection(db, "Receipts"),
+                where("studentID", "==", studentId)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        } catch (err) {
+            console.error("Error fetching fee data:", err);
+            return [];
+        }
+    };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
 
-    // --- APPLY TRIM AND LOWERCASE TO USER INPUT HERE ---
-    const trimmedUserID = userID.trim().toLowerCase();
-    const trimmedUserName = userName.trim().toLowerCase();
-    // ---------------------------------------------------
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true); // <-- start loading
 
-    try {
-      // 1️⃣ Pupils
-      const pupilQuery = query(
-        collection(db, "Voters"),
-        where("studentID", "==", trimmedUserID), // Use trimmed and lowercase ID
-        where("studentName", "==", trimmedUserName) // Use trimmed and lowercase Name
-      );
-      const pupilSnap = await getDocs(pupilQuery);
+        // --- APPLY TRIM AND LOWERCASE TO USER INPUT HERE ---
+        const trimmedUserID = userID.trim().toLowerCase();
+        const trimmedUserName = userName.trim().toLowerCase();
+        // ---------------------------------------------------
 
-      if (!pupilSnap.empty) {
-        const pupil = pupilSnap.docs[0].data();
-        const fees = await fetchFeeData(pupil.studentID);
+        try {
+            // 1️⃣ Pupils
+            const pupilQuery = query(
+                collection(db, "PupilsReg"),
+                where("studentID", "==", trimmedUserID), // Use trimmed and lowercase ID
+                where("studentName", "==", trimmedUserName) // Use trimmed and lowercase Name
+            );
+            const pupilSnap = await getDocs(pupilQuery);
 
-        // ✅ Pass state to route
-        navigate("/pupil", { state: { pupil, fees } });
-        return;
-      }
+            if (!pupilSnap.empty) {
+                const pupil = pupilSnap.docs[0].data();
+                const fees = await fetchFeeData(pupil.studentID);
 
-      // 2️⃣ Admin
-      const adminQuery = query(
-        collection(db, "Admins"),
-        where("adminID", "==", trimmedUserID), // Use trimmed and lowercase ID
-        where("adminName", "==", trimmedUserName) // Use trimmed and lowercase Name
-      );
-      const adminSnap = await getDocs(adminQuery);
+                // ✅ Set user in context
+                setUser({ role: "pupil", data: pupil });
 
-      if (!adminSnap.empty) {
-        const admin = adminSnap.docs[0].data();
-        navigate("/admin", { state: { admin } });
-        return;
-      }
+                // Navigate to pupil page
+                navigate("/pupil", { state: { pupil, fees } });
+                return;
+            }
+            // 2️⃣ Admin
+            const adminQuery = query(
+                collection(db, "Admins"),
+                where("adminID", "==", trimmedUserID),
+                where("adminName", "==", trimmedUserName)
+            );
+            const adminSnap = await getDocs(adminQuery);
+            if (!adminSnap.empty) {
+                const admin = adminSnap.docs[0].data();
+                setUser({ role: "admin", data: admin });
+                navigate("/admin");
+                return;
+            }
 
-      // 3️⃣ CEO
-      const ceoQuery = query(
-        collection(db, "CEOs"),
-        where("ceoID", "==", trimmedUserID), // Use trimmed and lowercase ID
-        where("ceoName", "==", trimmedUserName) // Use trimmed and lowercase Name
-      );
-      const ceoSnap = await getDocs(ceoQuery);
+            // 3️⃣ CEO
+            const ceoQuery = query(
+                collection(db, "CEOs"),
+                where("ceoID", "==", trimmedUserID),
+                where("ceoName", "==", trimmedUserName)
+            );
+            const ceoSnap = await getDocs(ceoQuery);
+            if (!ceoSnap.empty) {
+                const ceo = ceoSnap.docs[0].data();
+                setUser({ role: "ceo", data: ceo });
+                navigate("/ceo");
+                return;
+            }
 
-      if (!ceoSnap.empty) {
-        const ceo = ceoSnap.docs[0].data();
-        navigate("/ceo", { state: { ceo } });
-        return;
-      }
+            // ❌ Not found
+            setError("Invalid ID or Name");
+        } catch (err) {
+            console.error(err);
+            setError("Error connecting to database");
+        } finally {
+            setLoading(false); // <-- stop loading
+        }
+    };
 
-      // ❌ Not found
-      setError("Invalid ID or Name");
-    } catch (err) {
-      console.error(err);
-      setError("Error connecting to database");
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-indigo-700 mb-6 text-center">
-          Login
-        </h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">ID</label>
-            <input
-              type="text"
-              value={userID}
-              onChange={(e) => setUserID(e.target.value)}
-              className="w-full border p-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">Name</label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className="w-full border p-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            />
-          </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="w-full bg-indigo-700 text-white p-2 rounded-lg font-semibold hover:bg-indigo-800 transition"
-          >
-            Login
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+            <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+                <h1 className="text-2xl font-bold text-indigo-700 mb-6 text-center">
+                    Login
+                </h1>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                        <label className="block text-gray-700 font-semibold mb-1">ID</label>
+                        <input
+                            type="text"
+                            value={userID}
+                            onChange={(e) => setUserID(e.target.value)}
+                            className="w-full border p-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                             disabled={loading} // disable button while loading
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 font-semibold mb-1">Name</label>
+                        <input
+                            type="text"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="w-full border p-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                             disabled={loading} // disable button while loading
+                        />
+                    </div>
+                    {error && <p className="text-red-600 text-sm">{error}</p>}
+                    <button
+                        type="submit"
+                        className={`w-full p-2 rounded-lg font-semibold transition
+                            ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-700 text-white hover:bg-indigo-800"}`}
+                        disabled={loading} // disable button while loading
+                    >
+                        {loading ? "Loading..." : "Login"} {/* show loading text */}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
 };
 
 export default LoginPage;

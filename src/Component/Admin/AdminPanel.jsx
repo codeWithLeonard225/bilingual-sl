@@ -22,6 +22,7 @@ import Registration from "../Voters/Registration";
 import ClassRegistration from "./ClassRegistration";
 import FeeReceipt from "../FeeReceipt.jsx/FeeReceipt";
 import FeesCostPage from "../FeeReceipt.jsx/FeesCostPage";
+import FeesDashboard from "../Dashboard/FeesDsahboard";
 
 
 // --- Navigation Items ---
@@ -131,7 +132,7 @@ function AdminPanel() {
 
    const renderContent = () => {
     switch (activeTab) {
-      case "dashboard": return <Dashboard />;
+      case "dashboard": return <FeesDashboard />;
       case "Form": return <Registration />;
       case "class": return <ClassRegistration />;
       case "fees": return <FeeReceipt />;
@@ -170,7 +171,7 @@ function AdminPanel() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto bg-gray-100">
+      <div className="flex-1 p-2 overflow-y-auto bg-gray-100">
         {/* Toggle Button (mobile only) */}
         <div className="flex items-center justify-between mb-6 md:hidden">
           <Button variant="default" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -178,7 +179,6 @@ function AdminPanel() {
           </Button>
         </div>
 
-        <h1 className="text-4xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
         {renderContent()}
       </div>
     </div>

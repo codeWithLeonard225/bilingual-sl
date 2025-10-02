@@ -137,7 +137,7 @@ const FeesReceipt = () => {
             return;
         }
 
-        const votersCollectionRef = collection(db, "Voters");
+        const votersCollectionRef = collection(db, "PupilsReg");
         const q = query(
             votersCollectionRef,
             where("studentName", ">=", searchTerm),
@@ -471,7 +471,7 @@ const handleStudentSelect = async (student) => {
             const formDataObj = new FormData();
             formDataObj.append("file", blob);
             formDataObj.append("upload_preset", UPLOAD_PRESET);
-            formDataObj.append("folder", "Receipt_Photos");
+            formDataObj.append("folder", "Balingual/Receipt_Photos");
 
             xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
             xhr.send(formDataObj);

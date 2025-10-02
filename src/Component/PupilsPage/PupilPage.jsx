@@ -3,14 +3,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Import Firestore functions needed for real-time listener
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../../../firebase";
+import { useAuth } from "../Security/AuthContext";
 
 const PupilPage = () => {
+     const { user } = useAuth();
+    
+
+       if (!user) return <p>Loading...</p>;
 
     const location = useLocation();
     const navigate = useNavigate();
 
     // Get pupil data from location state
-    const { pupil } = location.state || {};
+   const pupil = user?.role === "pupil" ? user.data : null;
+   if (!pupil) return <p>Loading...</p>;
 
     // New state to hold ALL fee data, fetched in real-time
     const [fees, setFees] = useState([]);
@@ -201,7 +207,6 @@ const PupilPage = () => {
                 <div className="mt-6 bg-white shadow-xl rounded-2xl p-6 border border-gray-200">
                     <h3 className="text-xl font-bold mb-4 text-gray-700">Fee Line Items</h3>
 
-                    {/* Mobile View */}
                     {/* Mobile View */}
                     <div className="sm:hidden">
                         {filteredFees.length > 0 ? (

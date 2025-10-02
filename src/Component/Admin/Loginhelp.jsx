@@ -1,28 +1,22 @@
 import React, { useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../../firebase"; 
-import PupilPage from "../PupilsPage/PupilPage";
-import AdminPanel from "../Admin/AdminPanel";
-// import CEOPanel from "../CEOPanel/CEOPanel";
+import { db } from "../../../firebase";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext"; // import AuthContext
 
 const LoginPage = () => {
   const [userID, setUserID] = useState("");
   const [userName, setUserName] = useState("");
   const [error, setError] = useState("");
 
-  const [userType, setUserType] = useState(null); // "pupil", "admin", "ceo"
-  const [userData, setUserData] = useState(null);
-  const [feeData, setFeeData] = useState([]); // Only needed for pupil
+  const navigate = useNavigate();
+  const { setUser } = useAuth(); // get setUser
 
-  // Fetch fee records for pupil
   const fetchFeeData = async (studentId) => {
     try {
-      const q = query(
-        collection(db, "Receipts"),
-        where("studentID", "==", studentId)
-      );
+      const q = query(collection(db, "Receipts"), where("studentID", "==", studentId));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     } catch (err) {
       console.error("Error fetching fee data:", err);
       return [];
@@ -33,83 +27,65 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
 
+    const trimmedUserID = userID.trim().toLowerCase();
+    const trimmedUserName = userName.trim().toLowerCase();
+
     try {
-      // 1️⃣ Check Pupils
+      // 1️⃣ Pupils
       const pupilQuery = query(
-        collection(db, "Voters"),
-        where("studentID", "==", userID),
-        where("studentName", "==", userName)
+        collection(db, "Pupils"),
+        where("studentID", "==", trimmedUserID),
+        where("studentName", "==", trimmedUserName)
       );
       const pupilSnap = await getDocs(pupilQuery);
-
       if (!pupilSnap.empty) {
         const pupil = pupilSnap.docs[0].data();
         const fees = await fetchFeeData(pupil.studentID);
-        setUserData(pupil);
-        setFeeData(fees);
-        setUserType("pupil");
+
+        setUser({ role: "pupil", data: { ...pupil, fees } }); // store in context
+        navigate("/pupil"); // no state needed
         return;
       }
 
-      // 2️⃣ Check Admin
+      // 2️⃣ Admin
       const adminQuery = query(
         collection(db, "Admins"),
-        where("adminID", "==", userID),
-        where("adminName", "==", userName)
+        where("adminID", "==", trimmedUserID),
+        where("adminName", "==", trimmedUserName)
       );
       const adminSnap = await getDocs(adminQuery);
-
       if (!adminSnap.empty) {
         const admin = adminSnap.docs[0].data();
-        setUserData(admin);
-        setUserType("admin");
+        setUser({ role: "admin", data: admin });
+        navigate("/admin");
         return;
       }
 
-      // 3️⃣ Check CEO
+      // 3️⃣ CEO
       const ceoQuery = query(
         collection(db, "CEOs"),
-        where("ceoID", "==", userID),
-        where("ceoName", "==", userName)
+        where("ceoID", "==", trimmedUserID),
+        where("ceoName", "==", trimmedUserName)
       );
       const ceoSnap = await getDocs(ceoQuery);
-
       if (!ceoSnap.empty) {
         const ceo = ceoSnap.docs[0].data();
-        setUserData(ceo);
-        setUserType("ceo");
+        setUser({ role: "ceo", data: ceo });
+        navigate("/ceo");
         return;
       }
 
-      // ❌ Not found
       setError("Invalid ID or Name");
-
     } catch (err) {
       console.error(err);
       setError("Error connecting to database");
     }
   };
 
-  // Render the correct panel
-  if (userType === "pupil" && userData) {
-    return <PupilPage pupil={userData} fees={feeData} />;
-  }
-
-  if (userType === "admin" && userData) {
-    return <AdminPanel admin={userData} />;
-  }
-
-  if (userType === "ceo" && userData) {
-    return <CEOPanel ceo={userData} />;
-  }
-
-  // Default login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-indigo-700 mb-6 text-center">
-          Login
-        </h1>
+        <h1 className="text-2xl font-bold text-indigo-700 mb-6 text-center">Login</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-gray-700 font-semibold mb-1">ID</label>

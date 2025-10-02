@@ -81,7 +81,7 @@ const Registration = () => {
 
     // 🛑 REAL-TIME LISTENER for Students (Voters collection)
     useEffect(() => {
-        const collectionRef = collection(db, "Voters");
+        const collectionRef = collection(db, "PupilsReg");
         const q = query(collectionRef); 
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -202,7 +202,7 @@ const Registration = () => {
             const formDataObj = new FormData();
             formDataObj.append("file", blob);
             formDataObj.append("upload_preset", UPLOAD_PRESET);
-            formDataObj.append("folder", "Student_Photos");
+            formDataObj.append("folder", "Balingual/Uploads");
 
             xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
             xhr.send(formDataObj);
@@ -255,12 +255,12 @@ const Registration = () => {
             };
 
             if (formData.id) {
-                const userRef = doc(db, "Voters", formData.id);
+                const userRef = doc(db, "PupilsReg", formData.id);
                 await updateDoc(userRef, studentData);
                 toast.success("Student updated successfully!");
             } else {
                 const uniqueId = generateUniqueId();
-                await addDoc(collection(db, "Voters"), {
+                await addDoc(collection(db, "PupilsReg"), {
                     ...studentData,
                     studentID: uniqueId,
                     timestamp: new Date(),
@@ -485,6 +485,7 @@ const Registration = () => {
                         <label className="block mb-2 font-medium text-sm">Academic Year</label>
                         <select name="academicYear" value={formData.academicYear} onChange={handleInputChange} className="w-full p-2 border rounded-lg" required >
                             <option value="">Select Year</option>
+                            <option value="2024/2025">2024/2025</option>
                             <option value="2025/2026">2025/2026</option>
                         </select>
                         {/* Display Previous Year */}
@@ -577,7 +578,7 @@ const Registration = () => {
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Class</th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Gender</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Address</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">AcademicYear</th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
                                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -590,9 +591,8 @@ const Registration = () => {
                                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{user.studentName}</td>
                                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.class}</td>
                                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.gender}</td>
-                                    <td className="px-3 py-4 text-sm text-gray-500 hidden lg:table-cell max-w-xs overflow-hidden truncate">
-                                        {user.addressLine1} {user.addressLine2 ? `, ${user.addressLine2}` : ''}
-                                    </td>
+                                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.academicYear}</td>
+                                   
                                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {user.userPhotoUrl && (
                                             <img src={user.userPhotoUrl} alt={user.studentName} className="h-10 w-10 rounded-full object-cover" />
